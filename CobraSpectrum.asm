@@ -20,6 +20,8 @@
 FIX:
 .RASTER_DELAY			equ	$F1
 .RASTER_DELAY_ATTR		equ	.RASTER_DELAY - $92
+.SPR_Y_MID_LIMIT		equ	$50
+.SPR_Y_OFF_MAX			equ	$20
 
 ; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
@@ -5603,26 +5605,59 @@ SkipDrawPlayer:
 	CALL DoPlayerWeapons
 	CALL DrawBullets
 	LD   HL,SpriteData
-	LD   B,$07
-	
-SprLoop:
-	LD   A,(HL)
-	INC  L
-	OR   A
-	JP   M,NextSpr
-	PUSH BC
-	PUSH HL
-	CALL DrawSpriteFromHL
-	POP  HL
-	POP  BC
-	
-NextSpr:
-	LD   A,L
-	ADD  A,$06
-	LD   L,A
-	DJNZ SprLoop
-	
-	RET 
+
+DrawSortedSprites:
+	 LD   IX,.LateSpriteBuf + 7		; Sprite drawing with simple Y-threshold sorting (Hikaru/Intense)
+	 LD   BC,$0700
+.SprLp
+	 LD   A,(HL)
+	 ADD  A
+	 JR   C,.Skip
+	 LD   C,1
+	 PUSH HL
+	 INC  L
+	 LD   E,(HL)
+	 INC  L
+	 LD   D,(HL)
+	 LD   A,D
+	 ADD  FIX.SPR_Y_OFF_MAX
+	 CP   FIX.SPR_Y_MID_LIMIT + FIX.SPR_Y_OFF_MAX
+	 JR   C,.SpriteEarly
+	 DEC  IX
+	 DEC  L
+	 LD   (IX+0),L
+	 JR   .SpriteLate
+.SpriteEarly
+	 PUSH BC
+	 CALL DrawSpriteFromHLEarly
+	 POP  BC
+.SpriteLate
+	 POP  HL
+.Skip
+	 LD   A,L
+	 ADD  7
+	 LD   L,A
+	 DJNZ .SprLp
+	 LD   B,C
+	 DJNZ $
+	 PUSH IX
+	 POP  HL
+	 JR   .LateLpEntry
+.LateLp
+	 PUSH HL
+	 LD   L,(HL)
+	 LD   H,HIGH SpriteData
+	 CALL DrawSpriteFromHL
+	 POP  HL
+	 INC  L
+.LateLpEntry
+	 LD   A,L
+	 CP   LOW .LateSpriteBuf + 7
+	 JR   C,.LateLp
+	 RET
+
+.LateSpriteBuf
+	DEFS 7
 
 ; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ;
@@ -5695,6 +5730,7 @@ DrawSpriteFromHL:
 	LD   E,(HL)			; XNO
 	INC  L
 	LD   D,(HL)			; YNO
+DrawSpriteFromHLEarly:
 	INC  L
 	LD   C,(HL)			; GNO
 	INC  L
