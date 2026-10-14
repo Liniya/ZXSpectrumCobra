@@ -4588,6 +4588,8 @@ HasHitObject:
 
 ExplodeSprite:
 	CALL FreeAnyProjectiles
+	 CP  $07					; Last boss crash fix (Bandit @ WoS forums)
+	 RET Z
 	PUSH AF
 	LD   A,(IX+YNO)
 	ADD  A,$04
