@@ -17,6 +17,12 @@
 
 ; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
+FIX:
+.RASTER_DELAY			equ	$F1
+.RASTER_DELAY_ATTR		equ	.RASTER_DELAY - $92
+
+; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
 NO_BADDY_COLLISIONS		equ 0
 
 ; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -3235,8 +3241,10 @@ MainLoop:
 	CALL Keys
 	CALL ScrollMap
 	CALL ScrollAttributes
+	 PUSH AF                            ; The Z flag signals whether attributes were updated in this frame
 	CALL UpdatePlayer
 	CALL PlayerFall
+	 POP AF
 	CALL WaitforRaster
 	CALL DrawMap
 	CALL DrawStars
@@ -4685,15 +4693,18 @@ GFExitLeft:
 ;
 ;
 
-WaitforRaster:			; wait on the floating bus
-	LD   BC,$3F28
+WaitforRaster:					; No-floating bus raster delay (Hikaru/Intense)
+	 LD  B,FIX.RASTER_DELAY		; Variable delay depending on whether attributes were updated in this frame
+	 JR  NZ,Raster1
+	 LD  B,FIX.RASTER_DELAY_ATTR
 Raster1:
-	LD   A,C
-	IN   A,($FF)
-	CP   B
-	JR   NC,Raster1
-	
-	RET 
+	 ADD HL,HL
+	 ADD HL,HL
+	 ADD HL,HL
+	 DEC B
+	 JR  NZ,$-4
+
+	 RET
 
 ; xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ;
