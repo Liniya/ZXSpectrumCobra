@@ -5608,12 +5608,12 @@ SkipDrawPlayer:
 
 DrawSortedSprites:
 	 LD   IX,.LateSpriteBuf + 7		; Sprite drawing with simple Y-threshold sorting (Hikaru/Intense)
-	 LD   BC,$0700
+	 LD   BC,$0700					; C set to 0 used as the counter for an extra delay in case no NPC sprites are onscreen
 .SprLp
 	 LD   A,(HL)
 	 ADD  A
 	 JR   C,.Skip
-	 LD   C,1
+	 LD   C,1						; NPC sprite is onscreen - set C to 1 to skip the extra delay
 	 PUSH HL
 	 INC  L
 	 LD   E,(HL)
@@ -5623,11 +5623,11 @@ DrawSortedSprites:
 	 ADD  FIX.SPR_Y_OFF_MAX
 	 CP   FIX.SPR_Y_MID_LIMIT + FIX.SPR_Y_OFF_MAX
 	 JR   C,.SpriteEarly
-	 DEC  IX
+	 DEC  IX						; Sprite is in the lower half of the screen - save entry index to buffer and draw later
 	 DEC  L
 	 LD   (IX+0),L
 	 JR   .SpriteLate
-.SpriteEarly
+.SpriteEarly						; Sprite is in the upper half of the screen - draw it early
 	 PUSH BC
 	 CALL DrawSpriteFromHLEarly
 	 POP  BC
@@ -5638,13 +5638,13 @@ DrawSortedSprites:
 	 ADD  7
 	 LD   L,A
 	 DJNZ .SprLp
-	 LD   B,C
+	 LD   B,C						; Issue the extra delay according to the value in C
 	 DJNZ $
 	 PUSH IX
 	 POP  HL
 	 JR   .LateLpEntry
 .LateLp
-	 PUSH HL
+	 PUSH HL						; Now draw the "late" sprites
 	 LD   L,(HL)
 	 LD   H,HIGH SpriteData
 	 CALL DrawSpriteFromHL
