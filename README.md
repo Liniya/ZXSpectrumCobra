@@ -1,3 +1,7 @@
+This is a fork of the third-party reverse engineered source code of Cobra (Ocean Software, 1986) incorporating fixes from the [bugfixed release](https://intenseofficial.blogspot.com/2016/06/cobra-ocean-software-1986.html) by Intense. Original README below.
+
+---
+
 # ZXSpectrumCobra
 Full reverse engineered source code of Jonathan "Joffa" Smith's Cobra for the 48K Spectrum.
 
